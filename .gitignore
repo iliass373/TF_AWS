@@ -1,0 +1,7 @@
+# Ignore the terraform providers informations
+.terraform/*
+.terraform.lock.hcl
+
+# Ignore the current & previous state of the infra
+*.tfstate
+*.tfstate.*
