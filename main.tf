@@ -44,7 +44,7 @@ resource "aws_internet_gateway" "IGW" {
 }
 
 resource "aws_route_table" "RT" {
-  vpc_id = aws_vpc.my_vpc
+  vpc_id = aws_vpc.my_vpc.id
   route {
     //associated subnet can reach everywhere
     cidr_block = "0.0.0.0/0"         
@@ -56,8 +56,85 @@ resource "aws_route_table" "RT" {
     "Name" = "Application_RouteTable"
   }
 }
+# we have to associate the Route table with the subnet
+resource "aws_route_table_association" "RT_subnet_Associate" {
+  subnet_id = aws_subnet.subnet_public.id
+  route_table_id = aws_route_table.RT.id
+}
 
-/* variable "vpc_data" {
-  description = "the vpc created in aws"
-} */
+resource "aws_security_group" "SG_instance" {
+  name = "SG_Application"
+  description = "this sg is for the web application port 22 & http/s 80 443"
+  vpc_id = aws_vpc.my_vpc.id
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+  }
+  
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.main.cidr_block]  
+    }
+}
+
+resource "aws_security_group" "SG_alb" {
+  name        = "alb_security_group"
+  description = "Terraform load balancer security group"
+  vpc_id      = aws_vpc.my_vpc.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow all outbound traffic.
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "terraform-example-alb-security-group"
+  }
+}
+
+data "aws_ami" "id-1390339_instanceimage" {
+  filter {
+    name = "owner"
+    values = ["iliass"]
+  }
+}
+
+resource "aws_instance" "instance_syntx" {
+  ami           = data.aws_ami.id-1390339_instanceimage.id
+  instance_type = "t2.small"
+}
 
