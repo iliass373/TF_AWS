@@ -6,16 +6,20 @@ terraform {
     }
   }
 }
-# Configure the AWS Provider
+# Configure the AWS Provider ( env variable)
 variable "avail_zone" {}
 
 provider "aws" {
   region = "${var.avail_zone}"
 }
 
+variable "cidr_block_vpc" {
+  description = "the cidr block for the vpc"
+}
+
 # Create a VPC
 resource "aws_vpc" "my_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.cidr_block_vpc
   enable_dns_support = "true"
   enable_dns_hostnames = "true"
   instance_tenancy = "default"
@@ -26,11 +30,15 @@ resource "aws_vpc" "my_vpc" {
   }
 }
 
+variable "cidr_block_subnet" {
+  description = "the cidr block for the subnet"
+}
+
 resource "aws_subnet" "subnet_public" {
   vpc_id = aws_vpc.my_vpc.id
-  cidr_block = "10.0.1.0/24"
+  cidr_block = var.cidr_block_subnet
   map_public_ip_on_launch = "true"
-  availability_zone = var.avail_zone
+  availability_zone = "${var.avail_zone}"
   tags = {
     Name = "Application_public_subnet"
   }
@@ -90,7 +98,7 @@ resource "aws_security_group" "SG_instance" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = [aws_vpc.main.cidr_block]  
+    cidr_blocks = ["0.0.0.0/0"]  
     }
 }
 
@@ -121,7 +129,7 @@ resource "aws_security_group" "SG_alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "terraform-example-alb-security-group"
   }
 }
