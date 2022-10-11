@@ -151,9 +151,16 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
-variable "key_pair_name" {}
+variable "path_key_public" {
+  description = "put here the path of your ida_rsa.pub"
+}
 
-resource "aws_instance" "instance_syntx" {
+resource "aws_key_pair" "app_key_pair" {
+  key_name = "application_key_ssh"
+  public_key = file(var.path_key_public)
+}
+
+resource "aws_instance" "instance_app" {
   ami           = data.aws_ami.aws_image_linux.id
   instance_type = var.instance_type
   
@@ -161,7 +168,7 @@ resource "aws_instance" "instance_syntx" {
   vpc_security_group_ids = [aws_security_group.SG_instance.id]
   availability_zone = var.avail_zone
   associate_public_ip_address = true 
-  key_name = var.key_pair_name
+  key_name = aws_key_pair.app_key_pair.key_name
   
   tags = {
     "Name" = "myapp_prod_instance" 
