@@ -56,8 +56,6 @@ resource "aws_route_table" "RT" {
   route {
     //associated subnet can reach everywhere
     cidr_block = "0.0.0.0/0"         
-    
-    //CRT uses this IGW to reach internet
     gateway_id = aws_internet_gateway.IGW.id 
   }
   tags = {
@@ -85,6 +83,7 @@ resource "aws_security_group" "SG_instance" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
+    cidr_blocks = [] # Enter the ip address of your team that want to access the instance
   }
   
   ingress {
@@ -134,15 +133,38 @@ resource "aws_security_group" "SG_alb" {
   }
 }
 
-data "aws_ami" "id-1390339_instanceimage" {
+data "aws_ami" "aws_image_linux" {
+  most_recent = true
+  owners = [ "amazon" ]
   filter {
-    name = "owner"
-    values = ["iliass"]
+    name = "name"
+    values = ["amzn2-ami-hvm-*-gp2"]
+  }
+  filter {
+    name = "virtualization-type"
+    values = [ "hvm" ]
   }
 }
 
+variable "instance_type" {
+  description = "put here the instance type"
+  default = "t2.micro"
+}
+
+variable "key_pair_name" {}
+
 resource "aws_instance" "instance_syntx" {
-  ami           = data.aws_ami.id-1390339_instanceimage.id
-  instance_type = "t2.small"
+  ami           = data.aws_ami.aws_image_linux.id
+  instance_type = var.instance_type
+  
+  subnet_id = aws_subnet.subnet_public.id
+  vpc_security_group_ids = [aws_security_group.SG_instance.id]
+  availability_zone = var.avail_zone
+  associate_public_ip_address = true 
+  key_name = var.key_pair_name
+  
+  tags = {
+    "Name" = "myapp_prod_instance" 
+  }
 }
 
