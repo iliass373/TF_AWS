@@ -1,22 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-# Configure the AWS Provider ( env variable)
-variable "avail_zone" {}
-
-provider "aws" {
-  region = "${var.avail_zone}"
-}
-
-variable "cidr_block_vpc" {
-  description = "the cidr block for the vpc"
-}
-
 # Create a VPC
 resource "aws_vpc" "my_vpc" {
   cidr_block = var.cidr_block_vpc
@@ -28,10 +9,6 @@ resource "aws_vpc" "my_vpc" {
     Name = "Application_VPC"
     env = "prod"
   }
-}
-
-variable "cidr_block_subnet" {
-  description = "the cidr block for the subnet"
 }
 
 resource "aws_subnet" "subnet_public" {
@@ -144,15 +121,6 @@ data "aws_ami" "aws_image_linux" {
     name = "virtualization-type"
     values = [ "hvm" ]
   }
-}
-
-variable "instance_type" {
-  description = "put here the instance type"
-  default = "t2.micro"
-}
-
-variable "path_key_public" {
-  description = "put here the path of your ida_rsa.pub"
 }
 
 resource "aws_key_pair" "app_key_pair" {
